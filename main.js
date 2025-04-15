@@ -86,7 +86,7 @@ function init() {
 
     // TETO
     const ceiling = new THREE.Mesh(
-        new THREE.PlaneGeometry(400, 400),
+        new THREE.PlaneGeometry(402, 402),
         new THREE.MeshStandardMaterial({ color: 0x333333, side: THREE.DoubleSide })
     );
     ceiling.rotation.x = Math.PI / 2;
@@ -128,9 +128,14 @@ function init() {
     leftWall3.position.set(-200,68,0);
     scene.add(leftWall3);
 
-    const rightWall = new THREE.Mesh(new THREE.BoxGeometry(2, 100, 400), wallMaterial);
-    rightWall.position.set(200, 0, 0);
+    const rightWall = new THREE.Mesh(new THREE.BoxGeometry(2, 100, 198), wallMaterial);
+    rightWall.position.set(200, 0, -150);
     scene.add(rightWall);
+    
+    const rightWall2 = new THREE.Mesh(new THREE.BoxGeometry(2, 100, 198), wallMaterial);
+    rightWall2.position.set(200, 0, 150);
+    scene.add(rightWall2);
+
 
     const collidableObjects = [backWall, frontWall, leftWall1, leftWall2, leftWall3, rightWall];
 
@@ -306,6 +311,60 @@ function init() {
         table.position.set(-220, -50, -40); 
         table.rotation.y = Math.PI / 2; 
         scene.add(table);
+    });
+
+        //carregar modelo de porta
+    loader.load('escaperoom/models/door.glb', function (gltf) {
+        portaModelo = gltf.scene;
+
+        //escala da porta
+        portaModelo.scale.set(35, 30, 50);
+        portaModelo.position.set(-200, -50, 0);
+        portaModelo.rotation.y = Math.PI / 2;
+        scene.add(portaModelo);
+
+        const animations = gltf.animations;
+
+        //criar o mixer para controlar animações
+        mixer = new THREE.AnimationMixer(portaModelo);
+
+        //verificar se há animações e associar à animação de abrir a porta
+        if (animations && animations.length) {
+            
+            doorAnimation = animations[0];  
+            doorAction = mixer.clipAction(doorAnimation);
+
+        
+            doorAction.setLoop(THREE.LoopOnce, 1); 
+            doorAction.clampWhenFinished = true; 
+        }
+
+        //carregar modelo de portão
+        loader.load('escaperoom/models/garage.glb', function (gltf) {
+            portaModelo = gltf.scene;
+    
+            //escala da porta
+            portaModelo.scale.set(50, 50, 50);
+            portaModelo.position.set(200, -50, 0);
+            portaModelo.rotation.y = Math.PI / 2;
+            scene.add(portaModelo);
+    
+            const animations = gltf.animations;
+    
+            //criar o mixer para controlar animações
+            mixer = new THREE.AnimationMixer(portaModelo);
+    
+            //verificar se há animações e associar à animação de abrir a porta
+            if (animations && animations.length) {
+                
+                doorAnimation = animations[0];  
+                doorAction = mixer.clipAction(doorAnimation);
+    
+            
+                doorAction.setLoop(THREE.LoopOnce, 1); 
+                doorAction.clampWhenFinished = true; 
+            }
+        });
     });
 
 };
