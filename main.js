@@ -36,6 +36,7 @@ function init() {
     // Câmara
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.position.set(-300, -10, 0); // ao nível do chão (o chão está em y = -50)
+    camera.rotation.y = Math.PI / -2;
           
 
     // Renderer

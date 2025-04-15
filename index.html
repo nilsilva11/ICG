@@ -1,14 +1,89 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Escape Room</title>
     <style>
-      body { margin: 0; overflow: hidden; }
-      canvas { display: block; }
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #333;
+            color: white;
+            margin: 0;
+            flex-direction: column;
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        .button-container {
+            display: flex;
+            gap: 20px;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        .about-container {
+            display: none;
+            margin-top: 20px;
+            background-color: #444;
+            padding: 20px;
+            border-radius: 5px;
+        }
     </style>
-  </head>
-  <body>
-    <script type="module" src="main.js"></script>
-  </body>
+</head>
+<body>
+
+    <h1>Escape Room</h1>
+
+    <!-- buttons -->
+    <div class="button-container">
+        <button id="playButton">Play</button>
+        <button id="aboutButton">About</button>
+    </div>
+
+    <!-- about -->
+    <div class="about-container" id="aboutSection">
+        <h2>About</h2>
+        <p>This virtual escape room was developed by Nil Silva, a student of LECI at the University of Aveiro, as part of the Introduction to Computer Graphics course.</p>
+        <button id="backButton">Exit</button>
+    </div>
+
+    <script>
+        //redirect to main
+        document.getElementById('playButton').addEventListener('click', function() {
+            window.location.href = "main.html";
+        });
+
+        //show about
+        document.getElementById('aboutButton').addEventListener('click', function() {
+            document.querySelector('.about-container').style.display = 'block'; 
+        });
+
+        //exit about
+        document.getElementById('backButton').addEventListener('click', function() {
+            document.querySelector('.about-container').style.display = 'none'; 
+        });
+    </script>
+
+</body>
 </html>
