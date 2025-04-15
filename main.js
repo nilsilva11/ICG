@@ -47,25 +47,16 @@ function init() {
     controls = new PointerLockControls(camera, document.body);
     scene.add(controls.getObject());
 
-    // Criar o buraco na parede
+    //criar o buraco na parede - still not functional
     createFrontWallHole();
 
-    // Luz ambiente
-    //const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
-    //scene.add(ambientLight);
-
-    RectAreaLightUniformsLib.init();
-
-    // Luz pontual no teto
-    //const pointLight = new THREE.PointLight(0xffffff, 1.2);
-    //pointLight.position.set(0, 40, 0);
-    //scene.add(pointLight);
+    RectAreaLightUniformsLib.init(); //led lobby lights
 
     // CHÃO
     const textureLoader = new THREE.TextureLoader();
-    const floorTexture = textureLoader.load('escaperoom/textures/concrete.jpg'); // <– caminho para a textura do chão
+    const floorTexture = textureLoader.load('escaperoom/textures/concrete.jpg'); 
 
-    // Permitir repetição da textura no chão
+    //textura do chão
     floorTexture.wrapS = THREE.RepeatWrapping;
     floorTexture.wrapT = THREE.RepeatWrapping;
     floorTexture.repeat.set(8, 8); // Ajusta conforme o nível de detalhe
@@ -90,13 +81,12 @@ function init() {
     scene.add(ceiling);
 
     // PAREDES
-    const wallTexture = textureLoader.load('escaperoom/textures/wall.jpg'); // caminho para a tua textura
+    const wallTexture = textureLoader.load('escaperoom/textures/wall.jpg'); 
 
-    // Permitir repetição da textura para não parecer esticada
+    
     wallTexture.wrapS = wallTexture.wrapT = THREE.RepeatWrapping;
     wallTexture.repeat.set(4, 2); // ajusta horizontal/vertical
 
-    // Substituir o material
     const wallMaterial = new THREE.MeshStandardMaterial({
         map: wallTexture
     });
@@ -120,7 +110,7 @@ function init() {
 
     const collidableObjects = [backWall, frontWall, leftWall, rightWall];
 
-    // NOVA SALA: Lobby (ao lado esquerdo da atual)
+    // ==================== lobby room =========================
 
     const lobbyFloorTexture = textureLoader.load('escaperoom/textures/lobbyfloor.jpg');
     lobbyFloorTexture.wrapS = lobbyFloorTexture.wrapT = THREE.RepeatWrapping;
@@ -154,27 +144,13 @@ function init() {
     lobbyCeiling.position.set(-300, 50, 0);
     scene.add(lobbyCeiling); 
 
-    // 💡 Painel LED (RectAreaLight) no teto do lobby
+    //LED lights no teto do lobby
     const ledLight = new THREE.RectAreaLight(0xffffff, 1, 100, 300); // (cor, intensidade, largura, altura)
     ledLight.position.set(-300, 49.5, 0); // ligeiramente abaixo do teto
     ledLight.rotation.x = -Math.PI / 2; // apontar para baixo
     scene.add(ledLight);
 
-    // 👀 Helper (opcional para debug)
-    //const ledHelper = new RectAreaLightHelper(ledLight);
-    //ledLight.add(ledHelper);
-
-    // 💡 LED tipo painel quadrado no teto do lobby
-    //const ledLight = new THREE.RectAreaLight(0xffffff, 2, 300, 300); // (cor, intensidade, largura, altura)
-    //ledLight.position.set(-300, 49, 0); // ligeiramente abaixo do teto
-    //ledLight.lookAt(-300, 0, 0); // direção: para baixo
-    //scene.add(ledLight);
-
-    // 🔧 Helper para visualizar a área da luz (remove em produção)
-    //const ledHelper = new RectAreaLightHelper(ledLight);
-    //ledLight.add(ledHelper);
-
-    // Paredes do lobby (sem parede a ligar ao armazém)
+    //paredes do lobby (sem parede a ligar ao armazém)
     const lobbyWallTexture = textureLoader.load('escaperoom/textures/lobbywall.jpg');
     lobbyWallTexture.wrapS = lobbyWallTexture.wrapT = THREE.RepeatWrapping;
     lobbyWallTexture.repeat.set(4, 2);
@@ -193,137 +169,107 @@ function init() {
     lobbyBackWall2.position.set(-300, 0, -200);
     scene.add(lobbyBackWall2);
 
-    //carrega flashlight
-    //loader.load('escaperoom/models/flashlight.glb', function (gltf) {
-        //const lantern = gltf.scene;
-    
-        // 👇 posição como se estivesse na mão direita, à frente
-        //lantern.position.set(0.2, -0.2, -0.3); // ligeiramente à frente e à direita
-        //lantern.rotation.set(0, 190.4, 0); // virada para a frente
-        //lantern.scale.set(2, 2, 2);
-    
-        //camera.add(lantern); // ➕ attach à câmara
-    
-        // 🔦 Luz da lanterna
-        //flashlight = new THREE.SpotLight(0xffffff, 3, 200, Math.PI / 6, 0.2); // mais estreito
-        //flashlight.visible = lanternVisible; // aplica o estado inicial (false por defeito)
-        //flashlight.castShadow = true;
-        //flashlight.position.set(0, 0, 0); // origem na lanterna
-    
-        //flashlightTarget = new THREE.Object3D();
-        //flashlightTarget.position.z = -5; // mais à frente (em relação à lanterna)
-        //camera.add(flashlightTarget)
+    // ==================== lobby room end =========================
 
-        //flashlight.target = flashlightTarget;
-    
-        //lantern.add(flashlight);
-        //camera.add(flashlight);
-    
-    //});
-
-    // Carregar lanterna e posicioná-la em cima da mesa
+    //carregar lanterna para cima da mesa
     loader.load('escaperoom/models/flashlight.glb', function (gltf) {
         const lantern = gltf.scene;
         
-        // Ajustar a escala
-        lantern.scale.set(90, 90, 90); // Ajuste conforme necessário
+        //ajustar a escala
+        lantern.scale.set(90, 90, 90);
 
         // Posiciona a lanterna em cima da mesa
-        lantern.position.set(-220, -27.5, -40); // Ajuste a posição da lanterna para ficar em cima da mesa
+        lantern.position.set(-220, -27.5, -40); 
 
-        // Não adicionar luz diretamente aqui (a lanterna pode ter uma luz, caso queira)
         scene.add(lantern);
 
         flashlight = lantern;
 
-        // Criar luz da lanterna
+        //criar luz da lanterna
         flashlightLight = new THREE.SpotLight(0xffffff, 3, 200, Math.PI / 6, 0.2); // mais estreito
         flashlightLight.visible = false; // Iniciar com a luz desligada
         flashlightLight.position.set(0, 0, 0); // Origem na lanterna
         flashlightLight.castShadow = true;
 
-        // Adicionar a luz ao modelo da lanterna
+        //adicionar a luz ao modelo da lanterna
         lantern.add(flashlightLight);
 
-        // Criar um alvo para a luz da lanterna
+        //criar um range para a luz da lanterna
         flashlightTarget = new THREE.Object3D();
-        flashlightTarget.position.z = -5; // A luz vai para frente da lanterna
+        flashlightTarget.position.z = -5; 
         camera.add(flashlightTarget);
 
-        flashlightLight.target = flashlightTarget; // Definir o alvo da luz
+        flashlightLight.target = flashlightTarget; 
 
-        camera.add(flashlightLight); // Adicionar a luz à câmera para seguir a posição
-
+        camera.add(flashlightLight);
 
     });
 
-    // Carregar modelo de porta
+    //carregar modelo de porta
     loader.load('escaperoom/models/door.glb', function (gltf) {
         portaModelo = gltf.scene;
 
-        // 🧱 Ajustar escala, posição e rotação da porta
-        portaModelo.scale.set(35, 30, 50); // Ajusta se necessário
-        portaModelo.position.set(-200, -50, 0); // ao nível do chão
-        portaModelo.rotation.y = Math.PI / 2; // virar para ficar de frente
-
+        //escala da porta
+        portaModelo.scale.set(35, 30, 50);
+        portaModelo.position.set(-200, -50, 0);
+        portaModelo.rotation.y = Math.PI / 2;
         scene.add(portaModelo);
 
         const animations = gltf.animations;
 
-        // Criar o mixer para controlar animações
+        //criar o mixer para controlar animações
         mixer = new THREE.AnimationMixer(portaModelo);
 
-        // Verificar se há animações e associar à animação de abrir a porta
+        //verificar se há animações e associar à animação de abrir a porta
         if (animations && animations.length) {
-            // Aqui, selecionamos a animação correta (ajustar se necessário)
-            doorAnimation = animations[0];  // Seleciona a primeira animação (ex: "door_open", "door_move", etc.)
+            
+            doorAnimation = animations[0];  
             doorAction = mixer.clipAction(doorAnimation);
 
-            // Configurar a animação para que não entre em loop e defina o tempo inicial
-            doorAction.setLoop(THREE.LoopOnce, 1);  // Apenas uma vez
-            doorAction.clampWhenFinished = true; // A animação vai parar no final
+        
+            doorAction.setLoop(THREE.LoopOnce, 1); 
+            doorAction.clampWhenFinished = true; 
         }
     });
 
 
-    // Após adicionar a porta à cena
+    //carregar walllamp
     loader.load('escaperoom/models/walllamp.glb', function (gltf) {
         const lampAboveDoor = gltf.scene;
         
-        // ➕ Coloca o candeeiro por cima da porta (ajusta conforme o modelo)
-        lampAboveDoor.position.set(-217, 40, 0);  // mesma X/Z da porta, altura um pouco abaixo do teto
+        //colocado em cima da porta
+        lampAboveDoor.position.set(-217, 40, 0);
 
         lampAboveDoor.rotation.y = Math.PI;
 
-        lampAboveDoor.scale.set(5, 5, 5);      // ajusta escala se necessário
+        lampAboveDoor.scale.set(5, 5, 5);    
         scene.add(lampAboveDoor);
 
-        // Criar a "lâmpada" visível (dentro do candeeiro)
-        const bulbGeometry = new THREE.SphereGeometry(0.2, 32, 32); // Esfera que vai simular o bulbo da lâmpada
-        const bulbMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });  // Cor amarela para representar luz
+        //criar a "lâmpada"
+        const bulbGeometry = new THREE.SphereGeometry(0.2, 32, 32); 
+        const bulbMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });  //cor amarelada
         const bulb = new THREE.Mesh(bulbGeometry, bulbMaterial);
 
-        // Posicionar a esfera dentro do candeeiro (ajustar conforme o seu modelo)
-        bulb.position.set(-215, 30, 0); // Coloca a esfera na posição da lâmpada dentro do candeeiro
-        lampAboveDoor.add(bulb); // Adiciona a esfera dentro do modelo do candeeiro
+        //posicionar a esfera dentro do candeeiro 
+        bulb.position.set(-215, 30, 0); 
+        lampAboveDoor.add(bulb); 
 
-        // 💡 Luz do candeeiro (agora sem luz visível diretamente, apenas a esfera amarela)
+        //luz do canddeeiro
         const lightAboveDoor = new THREE.PointLight(0xffa500, 2, 100);
-        lightAboveDoor.position.set(-215, 30, 0);  // Posição do centro da "lâmpada"
+        lightAboveDoor.position.set(-215, 30, 0); 
         scene.add(lightAboveDoor);
 
     });
 
     
-
-    // Carregar candeeiro
+    //carregar luz do armazém
     loader.load('escaperoom/models/lamp.glb', function (gltf) {
         const lamp = gltf.scene;
-        lamp.position.set(0, 47, 0); // ligeiramente abaixo do teto (que está a y = 50)
-        lamp.scale.set(40, 40, 40); // ajusta conforme necessário
+        lamp.position.set(0, 47, 0);
+        lamp.scale.set(40, 40, 40);
         scene.add(lamp);
 
-        //Luz pendurada no candeeiro
+        //luz pendurada no candeeiro
         const lampLight = new THREE.PointLight(0xfffff, 1.5, 150);
         lampLight.position.set(0, 40, 0);
         scene.add(lampLight);
@@ -332,15 +278,16 @@ function init() {
     //carregar mesa
     loader.load('escaperoom/models/table.glb', function (gltf) {
         const table = gltf.scene;
-        table.scale.set(7, 7, 7); // Ajuste a escala se necessário
-        table.position.set(-220, -50, -40); // Posição ao lado da porta
-        table.rotation.y = Math.PI / 2; // Ajuste a rotação conforme necessário
+        table.scale.set(7, 7, 7); 
+        table.position.set(-220, -50, -40); 
+        table.rotation.y = Math.PI / 2; 
         scene.add(table);
     });
 
 
 };
 
+//lock após clicar 
 document.addEventListener('click', () => {
     controls.lock();
   });
@@ -349,6 +296,7 @@ const velocity = new THREE.Vector3();
 const direction = new THREE.Vector3();
 const move = { forward: false, backward: false, left: false, right: false };
 
+//movimento wasd
 document.addEventListener('keydown', (event) => {
   switch (event.code) {
     case 'KeyW': move.forward = true; break;
@@ -358,6 +306,7 @@ document.addEventListener('keydown', (event) => {
   }
 });
 
+//movimento wasd
 document.addEventListener('keyup', (event) => {
   switch (event.code) {
     case 'KeyW': move.forward = false; break;
@@ -367,16 +316,7 @@ document.addEventListener('keyup', (event) => {
   }
 });
 
-//para ligar lanterna
-/*document.addEventListener('keydown', (event) => {
-    if (event.code === 'KeyF' && flashlight) {
-        lanternVisible = !lanternVisible;
-        flashlight.visible = lanternVisible;
-
-        console.log("Lanterna:", lanternVisible ? "ON" : "OFF");
-    }
-});*/
-
+//ligar/desligar lanterna
 document.addEventListener('keydown', (event) => {
     if (event.code === 'KeyF' && lanternPickedUp) {
         lanternVisible = !lanternVisible;
@@ -386,7 +326,7 @@ document.addEventListener('keydown', (event) => {
     }
 });
 
-
+//abrir e fechar porta
 document.addEventListener('keydown', (event) => {
     if (event.code === 'KeyO') {  // Quando pressionar "O", a porta abre
         if (doorAction) {
@@ -402,20 +342,17 @@ document.addEventListener('keydown', (event) => {
     }
 });
 
-// Detecção de tecla para pegar a lanterna (exemplo 'E' para pegar)
+//pegar lanterna
 document.addEventListener('keydown', (event) => {
-    if (event.code === 'KeyE' && !lanternPickedUp) {  // 'E' para pegar a lanterna
+    if (event.code === 'KeyE' && !lanternPickedUp) {  
         const cameraPosition = new THREE.Vector3();
         const lanternPosition = new THREE.Vector3();
 
-        // Obter as posições globais (absolutas) da câmera e da lanterna
         camera.getWorldPosition(cameraPosition);
         flashlight.getWorldPosition(lanternPosition);
 
-        // Calcular a distância entre o jogador (câmera) e a lanterna
         const distance = cameraPosition.distanceTo(lanternPosition);
 
-        // Só pegar a lanterna se estiver perto o suficiente
         if (distance <= pickupDistance) {
             pickUpLantern();
         } else {
@@ -424,19 +361,23 @@ document.addEventListener('keydown', (event) => {
     }
 });
 
+//função para pegar a lanterna
 function pickUpLantern() {
     if (flashlight) {
-        // Mover a lanterna para a posição da mão do jogador (ajustar conforme necessário)
-        flashlight.position.set(0.2, -0.2, -0.3); // ligeiramente à frente e à direita
-        flashlight.rotation.set(0, 190.4, 0); // virada para a frente
+
+        //move lanterna para posição da mão
+        flashlight.position.set(0.2, -0.2, -0.3); 
+        flashlight.rotation.set(0, 190.4, 0);
         flashlight.scale.set(2, 2, 2);
-        // Anexar a lanterna à câmera, fazendo ela seguir a mão do jogador
+
+        //anexar lanterna á camera
         camera.add(flashlight);
 
-        lanternPickedUp = true;  // Marca que a lanterna foi pega
+        lanternPickedUp = true;
     }
 }
 
+//still working on it
 function createFrontWallHole() {
     const textureLoader = new THREE.TextureLoader();
     const wallTexture = textureLoader.load('escaperoom/textures/wall.jpg');
@@ -447,11 +388,11 @@ function createFrontWallHole() {
         map: wallTexture
     });
 
-    // Criar uma nova parede para fazer o "buraco" onde a porta estará
+
     frontWallHole = new THREE.Mesh(new THREE.BoxGeometry(400, 100, 2), wallMaterial);
 
-    // Criar um buraco que será visível apenas quando a porta abrir
-    frontWallHole.position.set(0, 0, 200);  // Ajuste a posição conforme necessário
+    
+    frontWallHole.position.set(0, 0, 200); 
     scene.add(frontWallHole);
 }
 
@@ -463,18 +404,18 @@ function animate() {
         direction.x = Number(move.right) - Number(move.left);
         direction.normalize();
 
-        velocity.x = direction.x * 1.5; // velocidade
+        velocity.x = direction.x * 1.5; //velocidade de movimento
         velocity.z = direction.z * 1.5;
 
         controls.moveRight(velocity.x);
         controls.moveForward(velocity.z);
     }
-    // Deteta quando o player entra no armazém pela "porta" (posição X > -100)
+    //deteta quando player entra no armazém (necessário para depois trancar a porta)
     if (!portaBloqueada && camera.position.x > -100) {
         portaBloqueada = true;
         console.log("Porta trancada!");
     
-        // Esconder ou mover a porta
+        //still working on it
         if (portaModelo) {
             // portaModelo.visible = false; // Esconder
             portaModelo.position.set(9999, 9999, 9999); // Mover para longe
@@ -483,7 +424,7 @@ function animate() {
     }
 
     if (mixer) {
-        mixer.update(0.01);  // O valor pode ser ajustado conforme a velocidade da animação
+        mixer.update(0.05);  // O valor pode ser ajustado conforme a velocidade da animação
     }
 
     renderer.render(scene, camera);
