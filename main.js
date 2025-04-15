@@ -15,7 +15,22 @@ let pickupDistance = 50;
 let doorAnimation; 
 let mixer;  
 let doorAction;
-let frontWallHole;
+let canOpenDoor = true; 
+let backWall, frontWall, leftWall1, leftWall2, leftWall3, rightWall;
+
+let colliders = []; // Array para armazenar os colliders
+
+//verificar colisão entre camera e colliders
+function checkCollisions(newCameraPosition) {
+    const cameraBox = new THREE.Box3().setFromCenterAndSize(newCameraPosition, new THREE.Vector3(1, 1, 1));  // Ajuste o tamanho conforme necessário
+
+    for (let i = 0; i < colliders.length; i++) {
+        if (cameraBox.intersectsBox(colliders[i])) {
+            return true;
+        }
+    }
+    return false; 
+}
 
 init();
 animate();
@@ -47,9 +62,6 @@ function init() {
     //first person controls
     controls = new PointerLockControls(camera, document.body);
     scene.add(controls.getObject());
-
-    //criar o buraco na parede - still not functional
-    createFrontWallHole();
 
     RectAreaLightUniformsLib.init(); //led lobby lights
 
@@ -101,15 +113,26 @@ function init() {
     frontWall.position.set(0, 0, 200);
     scene.add(frontWall);
 
-    const leftWall = new THREE.Mesh(new THREE.BoxGeometry(2, 100, 400), wallMaterial);
-    leftWall.position.set(-200, 0, 0);
-    scene.add(leftWall);
+    //frontwall
+    //const leftWall = createWallWithHole();
+
+    const leftWall1 = new THREE.Mesh(new THREE.BoxGeometry(2, 100, 180), wallMaterial);
+    leftWall1.position.set(-200, 0, -110);
+    scene.add(leftWall1);
+
+    const leftWall2 = new THREE.Mesh(new THREE.BoxGeometry(2, 100, 180), wallMaterial);
+    leftWall2.position.set(-200, 0, 110);
+    scene.add(leftWall2);
+
+    const leftWall3 = new THREE.Mesh(new THREE.BoxGeometry(2, 100, 100), wallMaterial);
+    leftWall3.position.set(-200,68,0);
+    scene.add(leftWall3);
 
     const rightWall = new THREE.Mesh(new THREE.BoxGeometry(2, 100, 400), wallMaterial);
     rightWall.position.set(200, 0, 0);
     scene.add(rightWall);
 
-    const collidableObjects = [backWall, frontWall, leftWall, rightWall];
+    const collidableObjects = [backWall, frontWall, leftWall1, leftWall2, leftWall3, rightWall];
 
     // ==================== lobby room =========================
 
@@ -285,7 +308,6 @@ function init() {
         scene.add(table);
     });
 
-
 };
 
 //lock após clicar 
@@ -329,15 +351,28 @@ document.addEventListener('keydown', (event) => {
 
 //abrir e fechar porta
 document.addEventListener('keydown', (event) => {
-    if (event.code === 'KeyO') {  // Quando pressionar "O", a porta abre
-        if (doorAction) {
-            doorAction.reset();  // Resetar a animação caso já tenha sido tocada anteriormente
-            doorAction.play();  // Iniciar a animação da porta
-            console.log("A porta está abrindo...");
+    if (event.code === 'KeyO') {  
+        if (portaModelo && !portaBloqueada && canOpenDoor) {  
 
-            // Esconder o buraco na parede quando a porta abrir
-            if (frontWallHole) {
-                frontWallHole.visible = false;
+            const cameraPosition = new THREE.Vector3();
+            const portaPosition = new THREE.Vector3();
+
+            //cam and door pos
+            camera.getWorldPosition(cameraPosition);
+            portaModelo.getWorldPosition(portaPosition);
+
+            //distancia entre cam e porta
+            const distance = cameraPosition.distanceTo(portaPosition);
+
+            //se estiver perto
+            if (distance <= pickupDistance) {
+                if (doorAction) {
+                    doorAction.reset(); 
+                    doorAction.play();  
+                    console.log("A porta está a abrir...");
+                }
+            } else {
+                console.log("A porta está muito longe!");
             }
         }
     }
@@ -378,24 +413,7 @@ function pickUpLantern() {
     }
 }
 
-//still working on it
-function createFrontWallHole() {
-    const textureLoader = new THREE.TextureLoader();
-    const wallTexture = textureLoader.load('escaperoom/textures/wall.jpg');
-    wallTexture.wrapS = wallTexture.wrapT = THREE.RepeatWrapping;
-    wallTexture.repeat.set(4, 2);
 
-    const wallMaterial = new THREE.MeshStandardMaterial({
-        map: wallTexture
-    });
-
-
-    frontWallHole = new THREE.Mesh(new THREE.BoxGeometry(400, 100, 2), wallMaterial);
-
-    
-    frontWallHole.position.set(0, 0, 200); 
-    scene.add(frontWallHole);
-}
 
 function animate() {
     requestAnimationFrame(animate);
@@ -403,7 +421,7 @@ function animate() {
     if (controls.isLocked) {
         direction.z = Number(move.forward) - Number(move.backward);
         direction.x = Number(move.right) - Number(move.left);
-        direction.normalize();
+        direction.normalize(); 
 
         velocity.x = direction.x * 1.5; //velocidade de movimento
         velocity.z = direction.z * 1.5;
@@ -412,15 +430,11 @@ function animate() {
         controls.moveForward(velocity.z);
     }
     //deteta quando player entra no armazém (necessário para depois trancar a porta)
-    if (!portaBloqueada && camera.position.x > -100) {
+    if (!portaBloqueada && camera.position.x > -180) {
         portaBloqueada = true;
         console.log("Porta trancada!");
     
-        //still working on it
-        if (portaModelo) {
-            // portaModelo.visible = false; // Esconder
-            portaModelo.position.set(9999, 9999, 9999); // Mover para longe
-        }
+        canOpenDoor = false; // Bloquear a interação com a porta
     
     }
 
