@@ -9,6 +9,7 @@ let flashlight, flashlightTarget;
 let lanternVisible = false;
 let portaBloqueada = false;
 let portaModelo;
+let portao;
 let lanternPickedUp = false;
 let flashlightLight;
 let pickupDistance = 50; 
@@ -313,59 +314,50 @@ function init() {
         scene.add(table);
     });
 
-        //carregar modelo de porta
-    loader.load('escaperoom/models/door.glb', function (gltf) {
-        portaModelo = gltf.scene;
-
-        //escala da porta
-        portaModelo.scale.set(35, 30, 50);
-        portaModelo.position.set(-200, -50, 0);
-        portaModelo.rotation.y = Math.PI / 2;
-        scene.add(portaModelo);
-
+    //carregar modelo de portão
+    loader.load('escaperoom/models/garage.glb', function (gltf) {
+        
+        portao = gltf.scene;
+    
+            //escala da porta
+        portao.scale.set(50, 50, 50);
+        portao.position.set(200, -50, 0);
+        portao.rotation.y = Math.PI / 2;
+        scene.add(portao);
+    
         const animations = gltf.animations;
-
-        //criar o mixer para controlar animações
+    
+            //criar o mixer para controlar animações
         mixer = new THREE.AnimationMixer(portaModelo);
 
         //verificar se há animações e associar à animação de abrir a porta
         if (animations && animations.length) {
+                
+            portaoAnimation = animations[0];  
+            portaoAction = mixer.clipAction(doorAnimation);
+    
             
-            doorAnimation = animations[0];  
-            doorAction = mixer.clipAction(doorAnimation);
-
-        
-            doorAction.setLoop(THREE.LoopOnce, 1); 
-            doorAction.clampWhenFinished = true; 
+            portaoAction.setLoop(THREE.LoopOnce, 1); 
+            portaoAction.clampWhenFinished = true; 
         }
+    });
 
-        //carregar modelo de portão
-        loader.load('escaperoom/models/garage.glb', function (gltf) {
-            portaModelo = gltf.scene;
+
+    //carregar modelo do codelock
+    loader.load('escaperoom/models/codelock.glb', function (gltf) {
+        
+        const codelock = gltf.scene;
     
             //escala da porta
-            portaModelo.scale.set(50, 50, 50);
-            portaModelo.position.set(200, -50, 0);
-            portaModelo.rotation.y = Math.PI / 2;
-            scene.add(portaModelo);
+        codelock.scale.set(5, 5, 5);
+        codelock.position.set(200, -10, 70);
+        codelock.rotation.y = Math.PI;
+        scene.add(codelock);
     
-            const animations = gltf.animations;
-    
-            //criar o mixer para controlar animações
-            mixer = new THREE.AnimationMixer(portaModelo);
-    
-            //verificar se há animações e associar à animação de abrir a porta
-            if (animations && animations.length) {
-                
-                doorAnimation = animations[0];  
-                doorAction = mixer.clipAction(doorAnimation);
-    
-            
-                doorAction.setLoop(THREE.LoopOnce, 1); 
-                doorAction.clampWhenFinished = true; 
-            }
-        });
     });
+
+    
+    
 
 };
 
