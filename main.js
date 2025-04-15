@@ -9,8 +9,9 @@ let flashlight, flashlightTarget;
 let lanternVisible = false;
 let portaBloqueada = false;
 let portaModelo;
-let doorOpen = false;
-let doorRotationSpeed = 0.01;
+let lanternPickedUp = false;
+let flashlightLight;
+let pickupDistance = 50; 
 
 init();
 animate();
@@ -186,31 +187,67 @@ function init() {
     scene.add(lobbyBackWall2);
 
     //carrega flashlight
-    loader.load('escaperoom/models/flashlight.glb', function (gltf) {
-        const lantern = gltf.scene;
+    //loader.load('escaperoom/models/flashlight.glb', function (gltf) {
+        //const lantern = gltf.scene;
     
         // 👇 posição como se estivesse na mão direita, à frente
-        lantern.position.set(0.2, -0.2, -0.3); // ligeiramente à frente e à direita
-        lantern.rotation.set(0, 190.4, 0); // virada para a frente
-        lantern.scale.set(2, 2, 2);
+        //lantern.position.set(0.2, -0.2, -0.3); // ligeiramente à frente e à direita
+        //lantern.rotation.set(0, 190.4, 0); // virada para a frente
+        //lantern.scale.set(2, 2, 2);
     
-        camera.add(lantern); // ➕ attach à câmara
+        //camera.add(lantern); // ➕ attach à câmara
     
         // 🔦 Luz da lanterna
-        flashlight = new THREE.SpotLight(0xffffff, 3, 200, Math.PI / 6, 0.2); // mais estreito
-        flashlight.visible = lanternVisible; // aplica o estado inicial (false por defeito)
-        flashlight.castShadow = true;
-        flashlight.position.set(0, 0, 0); // origem na lanterna
+        //flashlight = new THREE.SpotLight(0xffffff, 3, 200, Math.PI / 6, 0.2); // mais estreito
+        //flashlight.visible = lanternVisible; // aplica o estado inicial (false por defeito)
+        //flashlight.castShadow = true;
+        //flashlight.position.set(0, 0, 0); // origem na lanterna
     
-        flashlightTarget = new THREE.Object3D();
-        flashlightTarget.position.z = -5; // mais à frente (em relação à lanterna)
-        camera.add(flashlightTarget)
+        //flashlightTarget = new THREE.Object3D();
+        //flashlightTarget.position.z = -5; // mais à frente (em relação à lanterna)
+        //camera.add(flashlightTarget)
 
-        flashlight.target = flashlightTarget;
+        //flashlight.target = flashlightTarget;
     
-        lantern.add(flashlight);
-        camera.add(flashlight);
+        //lantern.add(flashlight);
+        //camera.add(flashlight);
     
+    //});
+
+    // Carregar lanterna e posicioná-la em cima da mesa
+    loader.load('escaperoom/models/flashlight.glb', function (gltf) {
+        const lantern = gltf.scene;
+        
+        // Ajustar a escala
+        lantern.scale.set(90, 90, 90); // Ajuste conforme necessário
+
+        // Posiciona a lanterna em cima da mesa
+        lantern.position.set(-220, -27.5, -40); // Ajuste a posição da lanterna para ficar em cima da mesa
+
+        // Não adicionar luz diretamente aqui (a lanterna pode ter uma luz, caso queira)
+        scene.add(lantern);
+
+        flashlight = lantern;
+
+        // Criar luz da lanterna
+        flashlightLight = new THREE.SpotLight(0xffffff, 3, 200, Math.PI / 6, 0.2); // mais estreito
+        flashlightLight.visible = false; // Iniciar com a luz desligada
+        flashlightLight.position.set(0, 0, 0); // Origem na lanterna
+        flashlightLight.castShadow = true;
+
+        // Adicionar a luz ao modelo da lanterna
+        lantern.add(flashlightLight);
+
+        // Criar um alvo para a luz da lanterna
+        flashlightTarget = new THREE.Object3D();
+        flashlightTarget.position.z = -5; // A luz vai para frente da lanterna
+        camera.add(flashlightTarget);
+
+        flashlightLight.target = flashlightTarget; // Definir o alvo da luz
+
+        camera.add(flashlightLight); // Adicionar a luz à câmera para seguir a posição
+
+
     });
 
     // Carregar modelo de porta
@@ -218,7 +255,7 @@ function init() {
         portaModelo = gltf.scene;
 
         // 🧱 Ajustar escala, posição e rotação da porta
-        portaModelo.scale.set(30, 30, 50); // Ajusta se necessário
+        portaModelo.scale.set(35, 30, 50); // Ajusta se necessário
         portaModelo.position.set(-200, -50, 0); // ao nível do chão
         portaModelo.rotation.y = Math.PI / 2; // virar para ficar de frente
 
@@ -260,6 +297,14 @@ function init() {
         scene.add(lampLight);
     });
 
+    //carregar mesa
+    loader.load('escaperoom/models/table.glb', function (gltf) {
+        const table = gltf.scene;
+        table.scale.set(7, 7, 7); // Ajuste a escala se necessário
+        table.position.set(-220, -50, -40); // Posição ao lado da porta
+        table.rotation.y = Math.PI / 2; // Ajuste a rotação conforme necessário
+        scene.add(table);
+    });
 
 
 };
@@ -291,10 +336,19 @@ document.addEventListener('keyup', (event) => {
 });
 
 //para ligar lanterna
-document.addEventListener('keydown', (event) => {
+/*document.addEventListener('keydown', (event) => {
     if (event.code === 'KeyF' && flashlight) {
         lanternVisible = !lanternVisible;
         flashlight.visible = lanternVisible;
+
+        console.log("Lanterna:", lanternVisible ? "ON" : "OFF");
+    }
+});*/
+
+document.addEventListener('keydown', (event) => {
+    if (event.code === 'KeyF' && lanternPickedUp) {
+        lanternVisible = !lanternVisible;
+        flashlightLight.visible = lanternVisible;
 
         console.log("Lanterna:", lanternVisible ? "ON" : "OFF");
     }
@@ -306,6 +360,40 @@ document.addEventListener('keydown', (event) => {
     }
 });
 
+// Detecção de tecla para pegar a lanterna (exemplo 'E' para pegar)
+document.addEventListener('keydown', (event) => {
+    if (event.code === 'KeyE' && !lanternPickedUp) {  // 'E' para pegar a lanterna
+        const cameraPosition = new THREE.Vector3();
+        const lanternPosition = new THREE.Vector3();
+
+        // Obter as posições globais (absolutas) da câmera e da lanterna
+        camera.getWorldPosition(cameraPosition);
+        flashlight.getWorldPosition(lanternPosition);
+
+        // Calcular a distância entre o jogador (câmera) e a lanterna
+        const distance = cameraPosition.distanceTo(lanternPosition);
+
+        // Só pegar a lanterna se estiver perto o suficiente
+        if (distance <= pickupDistance) {
+            pickUpLantern();
+        } else {
+            console.log("A lanterna está muito longe!");
+        }
+    }
+});
+
+function pickUpLantern() {
+    if (flashlight) {
+        // Mover a lanterna para a posição da mão do jogador (ajustar conforme necessário)
+        flashlight.position.set(0.2, -0.2, -0.3); // ligeiramente à frente e à direita
+        flashlight.rotation.set(0, 190.4, 0); // virada para a frente
+        flashlight.scale.set(2, 2, 2);
+        // Anexar a lanterna à câmera, fazendo ela seguir a mão do jogador
+        camera.add(flashlight);
+
+        lanternPickedUp = true;  // Marca que a lanterna foi pega
+    }
+}
 
 function animate() {
     requestAnimationFrame(animate);
