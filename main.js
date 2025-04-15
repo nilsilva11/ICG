@@ -17,21 +17,14 @@ let doorAnimation;
 let mixer;  
 let doorAction;
 let canOpenDoor = true; 
-let backWall, frontWall, leftWall1, leftWall2, leftWall3, rightWall;
-
-let colliders = []; // Array para armazenar os colliders
-
-//verificar colisão entre camera e colliders
-function checkCollisions(newCameraPosition) {
-    const cameraBox = new THREE.Box3().setFromCenterAndSize(newCameraPosition, new THREE.Vector3(1, 1, 1));  // Ajuste o tamanho conforme necessário
-
-    for (let i = 0; i < colliders.length; i++) {
-        if (cameraBox.intersectsBox(colliders[i])) {
-            return true;
-        }
-    }
-    return false; 
-}
+let campoTexto = document.getElementById('campoTexto');  
+let textoDigitado = "";
+let digitandoCodigo = false;
+let codigoCorreto = "1234";
+let codelock;
+let mixerPortao;
+let portaoAnimation;
+let portaoAction;
 
 init();
 animate();
@@ -324,29 +317,25 @@ function init() {
         portao.position.set(200, -50, 0);
         portao.rotation.y = Math.PI / 2;
         scene.add(portao);
-    
-        const animations = gltf.animations;
-    
-            //criar o mixer para controlar animações
-        mixer = new THREE.AnimationMixer(portaModelo);
 
-        //verificar se há animações e associar à animação de abrir a porta
+        const animations = gltf.animations;
         if (animations && animations.length) {
-                
-            portaoAnimation = animations[0];  
-            portaoAction = mixer.clipAction(doorAnimation);
-    
+            mixerPortao = new THREE.AnimationMixer(portao);
+            portaoAnimation = animations[1];
+            portaoAction = mixerPortao.clipAction(portaoAnimation);
             
+            // Define a animação para tocar uma vez e sem looping
             portaoAction.setLoop(THREE.LoopOnce, 1); 
             portaoAction.clampWhenFinished = true; 
         }
+    
+        
     });
-
 
     //carregar modelo do codelock
     loader.load('escaperoom/models/codelock.glb', function (gltf) {
         
-        const codelock = gltf.scene;
+        codelock = gltf.scene;
     
             //escala da porta
         codelock.scale.set(5, 5, 5);
@@ -356,8 +345,6 @@ function init() {
     
     });
 
-    
-    
 
 };
 
@@ -448,6 +435,18 @@ document.addEventListener('keydown', (event) => {
     }
 });
 
+document.addEventListener('keydown', (event) => {
+    if (event.code === 'KeyE' && !digitandoCodigo) {
+        verificarProximidadeParaAbrirCampo();
+    } else if (digitandoCodigo) {
+        if (event.code === 'Enter') {
+            verificarCodigo(); 
+        } else if (event.key.length === 1) {
+            textoDigitado += event.key; 
+        }
+    }
+});
+
 //função para pegar a lanterna
 function pickUpLantern() {
     if (flashlight) {
@@ -464,7 +463,52 @@ function pickUpLantern() {
     }
 }
 
+function verificarProximidadeParaAbrirCampo() {
 
+
+    const cameraPosition = new THREE.Vector3();
+    const codelockPosition = new THREE.Vector3();
+
+    camera.getWorldPosition(cameraPosition);
+    codelock.getWorldPosition(codelockPosition);
+
+    const distance = cameraPosition.distanceTo(codelockPosition);
+
+    //se estiver perto do codelock
+    if (distance <= 50) {
+        console.log("Pressione 'E' para digitar o código.");
+        mostrarCampoTexto(); //mostra campo de texto
+    }
+}
+
+function mostrarCampoTexto() {
+    campoTexto.style.display = "block"; 
+    campoTexto.focus(); 
+    digitandoCodigo = true; //ativa modo de escrever
+}
+
+//verifica se o código está correto
+function verificarCodigo() {
+    if (textoDigitado === codigoCorreto) {
+        console.log("Código correto! O portão será aberto.");
+        abrirPortao(); 
+    } else {
+        console.log("Código incorreto! Tente novamente.");
+    }
+
+    campoTexto.value = "";
+    textoDigitado = "";
+    campoTexto.style.display = "none";
+    digitandoCodigo = false; //acaba modo de escrever
+}
+
+function abrirPortao() {
+    if (portaoAction) {
+        portaoAction.reset(); // Reseta a animação antes de tocar novamente
+        portaoAction.play();  // Reproduz a animação de abrir o portão
+        console.log("Portão está abrindo...");
+    }
+}
 
 function animate() {
     requestAnimationFrame(animate);
@@ -491,6 +535,10 @@ function animate() {
 
     if (mixer) {
         mixer.update(0.05);  // O valor pode ser ajustado conforme a velocidade da animação
+    }
+
+    if (mixerPortao) {
+        mixerPortao.update(0.01);  // O valor pode ser ajustado conforme a velocidade da animação
     }
 
     renderer.render(scene, camera);
