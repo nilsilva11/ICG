@@ -12,6 +12,10 @@ let portaModelo;
 let lanternPickedUp = false;
 let flashlightLight;
 let pickupDistance = 50; 
+let doorAnimation; 
+let mixer;  
+let doorAction;
+let frontWallHole;
 
 init();
 animate();
@@ -42,6 +46,9 @@ function init() {
     //first person controls
     controls = new PointerLockControls(camera, document.body);
     scene.add(controls.getObject());
+
+    // Criar o buraco na parede
+    createFrontWallHole();
 
     // Luz ambiente
     //const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
@@ -260,6 +267,22 @@ function init() {
         portaModelo.rotation.y = Math.PI / 2; // virar para ficar de frente
 
         scene.add(portaModelo);
+
+        const animations = gltf.animations;
+
+        // Criar o mixer para controlar animações
+        mixer = new THREE.AnimationMixer(portaModelo);
+
+        // Verificar se há animações e associar à animação de abrir a porta
+        if (animations && animations.length) {
+            // Aqui, selecionamos a animação correta (ajustar se necessário)
+            doorAnimation = animations[0];  // Seleciona a primeira animação (ex: "door_open", "door_move", etc.)
+            doorAction = mixer.clipAction(doorAnimation);
+
+            // Configurar a animação para que não entre em loop e defina o tempo inicial
+            doorAction.setLoop(THREE.LoopOnce, 1);  // Apenas uma vez
+            doorAction.clampWhenFinished = true; // A animação vai parar no final
+        }
     });
 
 
@@ -275,9 +298,18 @@ function init() {
         lampAboveDoor.scale.set(5, 5, 5);      // ajusta escala se necessário
         scene.add(lampAboveDoor);
 
-        // 💡 Luz do candeeiro acima da porta
-        const lightAboveDoor = new THREE.PointLight(0xffa500,2, 100);
-        lightAboveDoor.position.set(-215, 30, 0); // ligeiramente abaixo da lâmpada
+        // Criar a "lâmpada" visível (dentro do candeeiro)
+        const bulbGeometry = new THREE.SphereGeometry(0.2, 32, 32); // Esfera que vai simular o bulbo da lâmpada
+        const bulbMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });  // Cor amarela para representar luz
+        const bulb = new THREE.Mesh(bulbGeometry, bulbMaterial);
+
+        // Posicionar a esfera dentro do candeeiro (ajustar conforme o seu modelo)
+        bulb.position.set(-215, 30, 0); // Coloca a esfera na posição da lâmpada dentro do candeeiro
+        lampAboveDoor.add(bulb); // Adiciona a esfera dentro do modelo do candeeiro
+
+        // 💡 Luz do candeeiro (agora sem luz visível diretamente, apenas a esfera amarela)
+        const lightAboveDoor = new THREE.PointLight(0xffa500, 2, 100);
+        lightAboveDoor.position.set(-215, 30, 0);  // Posição do centro da "lâmpada"
         scene.add(lightAboveDoor);
 
     });
@@ -354,9 +386,19 @@ document.addEventListener('keydown', (event) => {
     }
 });
 
+
 document.addEventListener('keydown', (event) => {
-    if (event.code === 'KeyO') {  // Exemplo de tecla O para abrir a porta
-        openDoor();
+    if (event.code === 'KeyO') {  // Quando pressionar "O", a porta abre
+        if (doorAction) {
+            doorAction.reset();  // Resetar a animação caso já tenha sido tocada anteriormente
+            doorAction.play();  // Iniciar a animação da porta
+            console.log("A porta está abrindo...");
+
+            // Esconder o buraco na parede quando a porta abrir
+            if (frontWallHole) {
+                frontWallHole.visible = false;
+            }
+        }
     }
 });
 
@@ -395,6 +437,24 @@ function pickUpLantern() {
     }
 }
 
+function createFrontWallHole() {
+    const textureLoader = new THREE.TextureLoader();
+    const wallTexture = textureLoader.load('escaperoom/textures/wall.jpg');
+    wallTexture.wrapS = wallTexture.wrapT = THREE.RepeatWrapping;
+    wallTexture.repeat.set(4, 2);
+
+    const wallMaterial = new THREE.MeshStandardMaterial({
+        map: wallTexture
+    });
+
+    // Criar uma nova parede para fazer o "buraco" onde a porta estará
+    frontWallHole = new THREE.Mesh(new THREE.BoxGeometry(400, 100, 2), wallMaterial);
+
+    // Criar um buraco que será visível apenas quando a porta abrir
+    frontWallHole.position.set(0, 0, 200);  // Ajuste a posição conforme necessário
+    scene.add(frontWallHole);
+}
+
 function animate() {
     requestAnimationFrame(animate);
 
@@ -420,15 +480,11 @@ function animate() {
             portaModelo.position.set(9999, 9999, 9999); // Mover para longe
         }
     
-        // Parede a bloquear a passagem
-        const bloqueio = new THREE.Mesh(
-            new THREE.BoxGeometry(2, 100, 100),
-            wallMaterial
-        );
-        bloqueio.position.set(-200, 0, 0);
-        scene.add(bloqueio);
     }
 
+    if (mixer) {
+        mixer.update(0.01);  // O valor pode ser ajustado conforme a velocidade da animação
+    }
 
     renderer.render(scene, camera);
 }
