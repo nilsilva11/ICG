@@ -25,6 +25,12 @@ let codelock;
 let mixerPortao;
 let portaoAnimation;
 let portaoAction;
+let collidableObjects = []; 
+const wallBoxes = [];
+let portaoAberto = false;
+let portaoBox = null;
+let portaAberta = false;
+let portaBox = null;
 
 init();
 animate();
@@ -39,8 +45,7 @@ function init() {
     scene.background = new THREE.Color(0x000000);
 
     const lampLight = new THREE.PointLight(0xFFA500, 1.5, 100); // Cor alaranjada
-    lampLight.position.set(0, 1, 0); // Ajuste conforme a posição desejada
-    scene.add(lampLight);
+    lampLight.position.set(0, 1, 0); 
 
     // Câmara
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -66,7 +71,7 @@ function init() {
     //textura do chão
     floorTexture.wrapS = THREE.RepeatWrapping;
     floorTexture.wrapT = THREE.RepeatWrapping;
-    floorTexture.repeat.set(8, 8); // Ajusta conforme o nível de detalhe
+    floorTexture.repeat.set(8, 8); 
 
     const floorMaterial = new THREE.MeshStandardMaterial({ map: floorTexture });
 
@@ -131,7 +136,12 @@ function init() {
     scene.add(rightWall2);
 
 
-    const collidableObjects = [backWall, frontWall, leftWall1, leftWall2, leftWall3, rightWall];
+    collidableObjects = [backWall, frontWall, leftWall1, leftWall2, leftWall3, rightWall, rightWall2]; // objetos com os quais o jogador pode colidir
+
+    collidableObjects.forEach(obj => {
+        const box = new THREE.Box3().setFromObject(obj);
+        wallBoxes.push(box);
+    });
 
     // ==================== lobby room =========================
 
@@ -168,7 +178,7 @@ function init() {
     scene.add(lobbyCeiling); 
 
     //LED lights no teto do lobby
-    const ledLight = new THREE.RectAreaLight(0xffffff, 1, 100, 300); // (cor, intensidade, largura, altura)
+    const ledLight = new THREE.RectAreaLight(0xffffff, 3, 100, 300); // (cor, intensidade, largura, altura)
     ledLight.position.set(-300, 49.5, 0); // ligeiramente abaixo do teto
     ledLight.rotation.x = -Math.PI / 2; // apontar para baixo
     scene.add(ledLight);
@@ -232,11 +242,15 @@ function init() {
     loader.load('escaperoom/models/door.glb', function (gltf) {
         portaModelo = gltf.scene;
 
+
         //escala da porta
         portaModelo.scale.set(35, 30, 50);
         portaModelo.position.set(-200, -50, 0);
         portaModelo.rotation.y = Math.PI / 2;
         scene.add(portaModelo);
+
+        portaBox = new THREE.Box3().setFromObject(portaModelo);
+        wallBoxes.push(portaBox);
 
         const animations = gltf.animations;
 
@@ -293,7 +307,7 @@ function init() {
         scene.add(lamp);
 
         //luz pendurada no candeeiro
-        const lampLight = new THREE.PointLight(0xfffff, 1.5, 150);
+        const lampLight = new THREE.PointLight(0xfffff, 3, 150);
         lampLight.position.set(0, 40, 0);
         scene.add(lampLight);
     });
@@ -317,6 +331,9 @@ function init() {
         portao.position.set(200, -50, 0);
         portao.rotation.y = Math.PI / 2;
         scene.add(portao);
+
+        portaoBox = new THREE.Box3().setFromObject(portao);
+        wallBoxes.push(portaoBox);
 
         const animations = gltf.animations;
         if (animations && animations.length) {
@@ -408,6 +425,12 @@ document.addEventListener('keydown', (event) => {
                     doorAction.reset(); 
                     doorAction.play();  
                     console.log("A porta está a abrir...");
+                    portaAberta = true;
+
+                    const index = wallBoxes.indexOf(portaBox);
+                    if (index > -1) {
+                        wallBoxes.splice(index, 1);
+                    }
                 }
             } else {
                 console.log("A porta está muito longe!");
@@ -507,8 +530,26 @@ function abrirPortao() {
         portaoAction.reset(); // Reseta a animação antes de tocar novamente
         portaoAction.play();  // Reproduz a animação de abrir o portão
         console.log("Portão está abrindo...");
+
+        portaoAberto = true;
+
+        // Remove portaoBox da colisão para deixar passar
+        const index = wallBoxes.indexOf(portaoBox);
+        if (index > -1) {
+            wallBoxes.splice(index, 1);
+        }
+    
     }
 }
+
+function createPlayerBox(position) {
+    const buffer = 1;
+    const box = new THREE.Box3();
+    const size = new THREE.Vector3(1 + buffer, 2, 1 + buffer); // largura, altura, profundidade do jogador
+    box.setFromCenterAndSize(position.clone().add(new THREE.Vector3(0, 1, 0)), size); // ajusta Y para ficar no meio da altura
+    return box;
+}
+
 
 function animate() {
     requestAnimationFrame(animate);
@@ -516,30 +557,77 @@ function animate() {
     if (controls.isLocked) {
         direction.z = Number(move.forward) - Number(move.backward);
         direction.x = Number(move.right) - Number(move.left);
-        direction.normalize(); 
+        direction.normalize();
 
-        velocity.x = direction.x * 1.5; //velocidade de movimento
-        velocity.z = direction.z * 1.5;
+        let velocityX = direction.x * 1.5;
+        let velocityZ = direction.z * 1.5;
 
-        controls.moveRight(velocity.x);
-        controls.moveForward(velocity.z);
+        const currentPos = controls.getObject().position.clone();
+
+        let movedX = 0;
+        let movedZ = 0;
+
+        const maxSteps = 10;
+
+        // Tenta encontrar o máximo movimento em X que não colida
+        for (let step = 0; step <= maxSteps; step++) {
+            let factor = 1 - step / maxSteps;
+            let newPosX = currentPos.clone();
+            // Para X, temos de aplicar o movimento no eixo local (direita/esquerda)
+            const rightVector = new THREE.Vector3(1, 0, 0);
+            rightVector.applyQuaternion(camera.quaternion);
+            newPosX.addScaledVector(rightVector, velocityX * factor);
+
+            const boxX = createPlayerBox(newPosX);
+            const collisionX = wallBoxes.some(wallBox => wallBox.intersectsBox(boxX));
+
+            if (!collisionX) {
+                movedX = velocityX * factor;
+                break;
+            }
+        }
+
+        // Tenta encontrar o máximo movimento em Z que não colida
+        for (let step = 0; step <= maxSteps; step++) {
+            let factor = 1 - step / maxSteps;
+            let newPosZ = currentPos.clone();
+            // Para Z, movimento no eixo local (frente/trás)
+            const forwardVector = new THREE.Vector3(0, 0, -1);
+            forwardVector.applyQuaternion(camera.quaternion);
+            newPosZ.addScaledVector(forwardVector, velocityZ * factor);
+
+            const boxZ = createPlayerBox(newPosZ);
+            const collisionZ = wallBoxes.some(wallBox => wallBox.intersectsBox(boxZ));
+
+            if (!collisionZ) {
+                movedZ = velocityZ * factor;
+                break;
+            }
+        }
+
+        // Aplica movimento máximo permitido nos dois eixos
+        if (movedX !== 0) controls.moveRight(movedX);
+        if (movedZ !== 0) controls.moveForward(movedZ);
     }
-    //deteta quando player entra no armazém (necessário para depois trancar a porta)
-    if (!portaBloqueada && camera.position.x > -180) {
+
+    // resto do teu código (porta, animações, render)
+    if (!portaBloqueada && camera.position.x > -130) {
         portaBloqueada = true;
+        portaAberta = false;
         console.log("Porta trancada!");
-    
-        canOpenDoor = false; // Bloquear a interação com a porta
-    
+        canOpenDoor = false; 
+
+        if (portaBox) {
+            portaBox.setFromObject(portaModelo);
+            portaBox.expandByScalar(2); // buffer para antecipar colisão
+            if (!wallBoxes.includes(portaBox)) {
+                wallBoxes.push(portaBox);
+            }
+        }
     }
 
-    if (mixer) {
-        mixer.update(0.05);  // O valor pode ser ajustado conforme a velocidade da animação
-    }
-
-    if (mixerPortao) {
-        mixerPortao.update(0.01);  // O valor pode ser ajustado conforme a velocidade da animação
-    }
+    if (mixer) mixer.update(0.05);
+    if (mixerPortao) mixerPortao.update(0.01);
 
     renderer.render(scene, camera);
 }
