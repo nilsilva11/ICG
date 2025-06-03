@@ -4,8 +4,15 @@
     <meta charset="UTF-8" />
     <title>Escape Room</title>
     <style>
-      body { margin: 0; overflow: hidden; }
-      canvas { display: block; }
+      body {
+        margin: 0;
+        overflow: hidden;
+        font-family: Arial, sans-serif;
+        color: white;
+      }
+      canvas {
+        display: block;
+      }
 
       #campoTexto {
         display: none; /* Inicialmente oculto */
@@ -18,10 +25,174 @@
         width: 200px;
         text-align: center;
       }
+
+      /* HUD fixo no canto inferior direito */
+      #hud {
+        position: fixed;
+        bottom: 10px;
+        right: 10px;
+        z-index: 1000;
+        font-weight: bold;
+        user-select: none;
+      }
+
+      .hud-button {
+        cursor: pointer;
+        color: white;
+        background: none;
+        border: none;
+        font-size: 16px;
+        text-shadow: 0 0 4px black;
+        padding: 5px 8px;
+        transition: color 0.3s;
+      }
+
+      .hud-button:hover {
+        color: #ffcc00;
+        text-decoration: underline;
+      }
+
+      /* Popup com fundo branco semi-transparente */
+      #popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(255,255,255,0.95);
+        color: black;
+        padding: 20px 30px;
+        border-radius: 15px;
+        box-shadow: 0 0 15px rgba(0,0,0,0.5);
+        width: 350px;
+        max-width: 90%;
+        z-index: 2000;
+        display: none;
+        user-select: text;
+        font-size: 16px;
+      }
+
+      #popup.visible {
+        display: block;
+      }
+
+      #popup h2 {
+        margin-top: 0;
+        font-size: 22px;
+        text-align: center;
+      }
+
+      #popup ul {
+        padding-left: 20px;
+        margin-bottom: 20px;
+      }
+
+      #popup button {
+        display: block;
+        margin: 0 auto;
+        padding: 6px 15px;
+        font-size: 14px;
+        cursor: pointer;
+        border: 2px solid #333;
+        background-color: #eee;
+        border-radius: 8px;
+        transition: background-color 0.3s, border-color 0.3s;
+      }
+
+      #popup button:hover {
+        background-color: #ddd;
+        border-color: #666;
+      }
+
+      #popup-pista {
+        display: none;
+        position: fixed;
+        top: 10%;
+        left: 10%;
+        width: 80%;
+        height: 80%;
+        background: rgba(255, 255, 255, 0.3);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-radius: 10px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        z-index: 1000;
+        padding: 20px;
+        overflow: auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+
+      #popup-pista img {
+        max-width: 100%;
+        max-height: 90%;
+        margin-bottom: 10px;
+      }
+
+      #popup-pista button {
+        padding: 10px 20px;
+        background: #444;
+        border: none;
+        color: white;
+        font-size: 1.1em;
+        cursor: pointer;
+        border-radius: 5px;
+      }
+
+      #popup-pista button:hover {
+        background: #222;
+      }
     </style>
   </head>
   <body>
+
     <input type="text" id="campoTexto" placeholder="Digite o código..." />
+
+    <div id="credits" style="
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: black;
+    color: yellow;
+    font-family: 'Arial Black', sans-serif;
+    font-size: 2em;
+    overflow: hidden;
+    z-index: 9999;
+    ">
+    <div id="credits-text" style="
+        position: absolute;
+        bottom: -100%;
+        width: 100%;
+        text-align: center;
+        animation: scrollUp 30s linear forwards;
+    ">
+        
+    </div>
+    </div>
+
+    <style>
+      @keyframes scrollUp {
+      0% { bottom: -100%; }
+      100% { bottom: 100%; }
+      }
+    </style>
+
+    <!-- HUD com os botões -->
+    <div id="hud">
+      <span id="showCommands" class="hud-button">[X] Comandos</span> &nbsp;
+      <span id="showHints" class="hud-button">[Z] Pistas</span>
+    </div>
+
+    <div id="popup-pista" class="popup-pista" style="display:none;">
+      <img src="origami.png" style="width:100%; height:auto;" />
+      <button onclick="document.getElementById('popup-pista').style.display='none'">Fechar</button>
+    </div>
+
+    <div id="popup">
+      <div id="popupContent"></div>
+      <button id="closePopup">Fechar</button>
+    </div>
     <script type="module" src="main.js"></script>
   </body>
 </html>
